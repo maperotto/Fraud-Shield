@@ -9,6 +9,8 @@ from src.core.repository import InMemoryTransactionRepository
 from src.core.dashboard import DashboardGenerator
 from src.core.logger import setup_logger
 from src.core.exceptions import ModelNotTrainedException, InvalidTransactionException
+from src.core.rate_limiter import rate_limit
+from src.core.decorators import timing_decorator
 from src.infrastructure.database import FraudDatabase
 from src.infrastructure.feature_store import FeatureStore
 from src.infrastructure.fallback import FallbackFraudDetector
@@ -43,6 +45,8 @@ else:
 
 
 @analyze_bp.route('/v1/analyze', methods=['POST'])
+@rate_limit
+@timing_decorator
 def analyze_transaction():
     try:
         data = request.get_json()
