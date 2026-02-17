@@ -1,174 +1,126 @@
 # Fraud Shield
 
-Sistema anti-fraude de nível enterprise baseado em Machine Learning para detecção em tempo real de transações financeiras suspeitas com persistência de dados, fallback resiliente e auditoria completa.
+Engine de detecção de fraude em transações financeiras usando Machine Learning e análise comportamental.
 
-## O que diferencia este projeto de um "MVP de tutorial"?
+## Sobre o Projeto
 
-A maioria dos projetos de portfolio apenas treina um modelo e printa resultados no terminal. Fraud Shield foi projetado pensando em **produção real**:
+Fraud Shield analisa transações financeiras em tempo real para identificar possíveis fraudes. O sistema vai além de simplesmente avaliar valores isolados - ele constrói um perfil comportamental de cada usuário e detecta desvios que podem indicar atividade suspeita.
 
-### Resiliência
-- **Fallback Automático**: Se o modelo ML falhar, um sistema baseado em regras assume imediatamente
-- **Zero Downtime**: A API  nunca retorna erro 500 por falha de modelo
-- **Logging Estruturado**: Toda decisão é rastreável para auditoria
+Desenvolvi este projeto explorando como seria construir um sistema anti-fraude que realmente funcionasse em cenários reais. Não adianta ter um modelo de ML bom se o sistema cair quando o modelo falhar, ou se não houver forma de auditar as decisões tomadas.
 
-### Persistência de Dados
-- **Audit Trail Completo**: Cada análise é salva em banco SQLite com timestamp e features utilizadas
-- **Feature Store**: Estatísticas históricas do usuário são consultadas antes de cada decisão
-- **Histórico Consultável**: APIs dedicadas para relatórios e dashboards
+## Funcionalidades Principais
 
-### Testes de Carga Reais
-- **Stream Simulator**: Simula tráfego contínuo de transações para validar performance
-- **Métricas em Tempo Real**: Acompanhe TPS, taxa de fraude e latência durante os testes
+**Análise Comportamental**
+- Histórico de gastos do usuário
+- Padrões de frequência de transações
+- Desvio em relação ao comportamento normal
+- Análise temporal e geográfica
 
-### Relatórios Profissionais
-- **PDF de Incidentes**: Gere relatórios executivos com gráficos e estatísticas
-- **Dashboards Visuais**: Análise temporal de padrões de fraude
-- **APIs de Estatísticas**: Integração com ferramentas de BI
+**Infraestrutura**
+- API REST para integração
+- Banco de dados SQLite para auditoria
+- Sistema de fallback baseado em regras
+- Geração de relatórios em PDF
 
-## Por que este projeto existe?
+**Ferramentas de Desenvolvimento**
+- Simulador de tráfego para testes
+- Dashboard visual de análises
+- Logs estruturados para debugging
+- Estatísticas em tempo real
 
-Fraudes em transações financeiras representam bilhões em perdas anuais. Este projeto demonstra como construir um sistema anti-fraude que:
-- Detecta anomalias em tempo real com latência inferior a 100ms
-- Adapta-se a novos padrões através de retreinamento contínuo
-- Fornece explicabilidade nas decisões através de confidence scores e audit trails
-- Escala horizontalmente para suportar milhares de transações por segundo
+## Stack Tecnológica
 
-## Tecnologias e Decisões Arquiteturais
+**Backend & API**
+- Flask 3.0 - Framework web
+- Pydantic - Validação de schemas
+- Gunicorn - WSGI server
 
-### Backend & API
-- **Flask 3.0** - Framework web leve e flexível com routing eficiente
-- **Pydantic** - Validação robusta de schemas com type safety
-- **Gunicorn** - WSGI server para produção com workers multiprocesso
+**Machine Learning & Data**
+- Scikit-Learn - Random Forest classifier
+- Pandas & NumPy - Manipulação de dados
+- Matplotlib + ReportLab - Visualizações e relatórios
 
-### Machine Learning & Data Science
-- **Scikit-Learn** - Random Forest com class_weight='balanced' para dados desbalanceados
-- **Pandas & NumPy** - Processamento vetorizado de features
-- **Matplotlib + ReportLab** - Geração de dashboards e PDFs profissionais
+**Infraestrutura**
+- SQLite - Persistência e auditoria
+- Python 3.10+ com Type Hints
+- Logging com rotação de arquivos
 
-### Infraestrutura de Dados
-- **SQLite** - Banco relacional com índices otimizados para consultas temporais
-- **Feature Store** - Cache inteligente de estatísticas de usuário
-- **Logging Rotate** - System estruturado com rotação automática de arquivos
+## Arquitetura
 
-### Engenharia de Software
-- **Clean Architecture** - Separação entre domínio, core, infraestrutura e entrypoints
-- **Python 3.10+ Type Hints** - Type safety completo para facilitar manutenção
-- **Dependency Injection** - Facilita testes unitários e mocking
-
-## Arquitetura do Sistema
+O projeto segue uma separação em camadas para facilitar manutenção e testes:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                 API Layer - Flask                      │
-│  /analyze  │  /dashboard  │  /report  │  /stats       │
-└──────────────────────┬─────────────────────────────────┘
-                       │
-┌──────────────────────▼─────────────────────────────────┐
-│              Application Core                          │
-│  ┌───────────────┐  ┌────────────┐  ┌──────────────┐  │
-│  │   Feature     │  │   Fraud    │  │   Fallback   │  │
-│  │  Engineering  │  │  Detector  │  │   Detector   │  │
-│  └───────────────┘  └────────────┘  └──────────────┘  │
-└──────────────────────┬─────────────────────────────────┘
-                       │
-┌──────────────────────▼─────────────────────────────────┐
-│            Infrastructure Layer                        │
-│  ┌───────────┐  ┌────────────┐  ┌─────────────────┐   │
-│  │ Database  │  │   Feature  │  │     Report      │   │
-│  │  SQLite   │  │   Store    │  │   Generator     │   │
-│  └───────────┘  └────────────┘  └─────────────────┘   │
-└────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│         API (Flask)                 │
+│  /analyze │ /dashboard │ /report    │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│      Core & ML                      │
+│  Feature Engineering │ Detector     │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│    Infrastructure                   │
+│  Database │ Feature Store │ Reports │
+└─────────────────────────────────────┘
 ```
 
-## Features de Nível Enterprise
+**Camadas:**
+- `domain/` - Entidades e interfaces do negócio
+- `core/` - Lógica de ML e feature engineering
+- `infrastructure/` - Banco de dados, persistência e relatórios
+- `entrypoints/` - API REST e rotas
 
-### 1. Análise Comportamental Avançada
-O sistema não avalia apenas a transação isolada. Utiliza:
-- Desvio em relação ao ticket médio histórico do usuário
-- Frequência de transações em janelas temporais de 1h e 24h
-- Padrões geográficos e categorias de merchant preferidas
-- Taxa de fraude histórica do usuário para ajuste de confiança
-
-### 2. Sistema de Fallback Resiliente
-Se o modelo de Machine Learning falhar por qualquer motivo, um detector baseado em regras assume automaticamente:
-```
-Regra 1: Transação > $5000 = +0.4 score
-Regra 2: >10 transações em 1h = +0.5 score
-Regra 3: Novo usuário com valor >$1000 = +0.6 score
-```
-Isso garante que o serviço **nunca fica fora do ar**.
-
-### 3. Audit Trail Completo
-Cada decisão é persistida com:
-- Todas as features utilizadas na análise
-- Timestamp da transação e da análise
-- Modelo ou regra que gerou a decisão
-- Confidence score e risk level
-
-Isso permite investigações forenses e análise de falsos positivos.
-
-### 4. Stream Processing Simulator
-Teste o sistema sob carga real:
-```bash
-python scripts/stream_simulator.py --tps 10 --duration 60
-```
-Simula 10 transações por segundo durante 60 segundos, mostrando em tempo real:
-- Latência de resposta
-- Taxa de detecção de fraude
-- Erros e timeouts
-
-## Instalação e Setup
+## Como Rodar
 
 ### Pré-requisitos
 - Python 3.10 ou superior
-- pip e venv
 
-### Passo 1: Clone e Setup
+### Setup
+
+**1. Clone o repositório**
 ```bash
 git clone https://github.com/maperotto/Fraud-Shield.git
 cd Fraud-Shield
-python -m venv venv
 ```
 
-### Passo 2: Ative o Ambiente
-**Windows:**
+**2. Crie e ative o ambiente virtual**
+
+Windows:
 ```bash
+python -m venv venv
 venv\Scripts\activate
 ```
 
-**Linux/Mac:**
+Linux/Mac:
 ```bash
+python -m venv venv
 source venv/bin/activate
 ```
 
-### Passo 3: Instale Dependências
+**3. Instale as dependências**
 ```bash
 pip install -r requirements.txt
 ```
 
-### Passo 4: Configure Variáveis
-```bash
-cp .env.example .env
-```
-
-### Passo 5: Gere Dataset e Treine o Modelo
+**4. Gere dados e treine o modelo**
 ```bash
 python scripts/generate_dataset.py
 python scripts/train_model.py
 ```
 
-### Passo 6: Inicie a API
+**5. Inicie a API**
 ```bash
 python run.py
 ```
 
-A API estará em `http://localhost:5000`
+API rodando em `http://localhost:5000`
 
-## Como Usar
+## Uso
 
-### 1. Analisar uma Transação
+### Analisar uma transação
 
-**Request:**
 ```bash
 curl -X POST http://localhost:5000/v1/analyze \
   -H "Content-Type: application/json" \
@@ -182,7 +134,7 @@ curl -X POST http://localhost:5000/v1/analyze \
   }'
 ```
 
-**Response:**
+Resposta:
 ```json
 {
   "transaction_id": "tx_12345",
@@ -193,44 +145,28 @@ curl -X POST http://localhost:5000/v1/analyze \
 }
 ```
 
-### 2. Obter Estatísticas Gerais
+### Obter estatísticas gerais
+
 ```bash
 curl http://localhost:5000/v1/stats
 ```
 
-```json
-{
-  "total_analyzed": 5420,
-  "total_frauds": 271,
-  "fraud_rate": 5.0,
-  "total_fraud_amount": 234567.89,
-  "avg_confidence": 0.7234
-}
-```
+### Gerar dashboard visual
 
-### 3. Gerar Dashboard Visual
 ```bash
-curl -X GET http://localhost:5000/v1/dashboard --output dashboard.png
+curl http://localhost:5000/v1/dashboard --output dashboard.png
 ```
 
-### 4. Gerar Relatório PDF de Incidentes
+### Gerar relatório PDF
+
 ```bash
-curl -X GET http://localhost:5000/v1/report --output incident_report.pdf
+curl http://localhost:5000/v1/report --output report.pdf
 ```
 
-### 5. Simular Tráfego de Produção
+### Simular tráfego
+
 ```bash
 python scripts/stream_simulator.py --tps 5 --duration 30
-```
-
-Output:
-```
-Starting transaction stream simulation...
-Target: 5.0 tx/sec for 30 seconds
-────────────────────────────────────────
-✅ TX 0001 | $ 120.45 | user_0023 | LEGIT | Risk: LOW | Confidence: 0.123
-🚨 TX 0002 | $2340.00 | user_0078 | FRAUD | Risk: HIGH | Confidence: 0.892
-✅ TX 0003 | $  45.67 | user_0012 | LEGIT | Risk: LOW | Confidence: 0.087
 ```
 
 ## Estrutura do Projeto
@@ -268,90 +204,38 @@ Fraud-Shield/
 └── requirements.txt
 ```
 
-## Decisões Técnicas - Por quê?
+## Decisões Técnicas
 
-### Por que Random Forest ao invés de Isolation Forest?
-Random Forest oferece melhor controle sobre dados desbalanceados através do parâmetro `class_weight='balanced'`. Além disso, fornece `feature_importance` para debugging e explicabilidade das decisões.
+**Random Forest vs Isolation Forest**
+Escolhi Random Forest porque oferece melhor controle sobre dados desbalanceados com o parâmetro `class_weight='balanced'`. Também gera feature importance que é útil para debugging.
 
-### Por que Feature Engineering comportamental?
-Features como desvio do valor médio e frequência temporal capturam anomalias que **dados brutos não conseguiriam**. Um valor isolado de R$ 500 pode ser normal ou suspeito dependendo do histórico do usuário.
+**Feature Engineering**
+Features comportamentais como desvio do valor médio e frequência temporal capturam anomalias que dados brutos não conseguiriam. Um valor de R$ 500 pode ser normal ou suspeito dependendo do histórico do usuário.
 
-### Por que Clean Architecture?
-Separação em camadas permite trocar o modelo ML, o banco de dados ou o framework web sem impactar a lógica de negócio. Facilita:
-- Testes unitários isolados
-- Manutenção a longo prazo
-- Substituição de componentes
+**Clean Architecture**
+Separar em camadas facilita trocar componentes sem impactar o resto do código. Posso mudar o banco de dados ou o framework web mantendo a lógica de negócio intacta.
 
-### Por que SQLite ao invés de PostgreSQL?
-Para demonstração, SQLite oferece:
-- Zero configuração
-- Portabilidade total
-- Performance adequada até ~10k transações/seg
+**SQLite**
+Para este projeto, SQLite é suficiente e não precisa de configuração. Em um cenário com mais throughput, seria só trocar a connection string para PostgreSQL sem mudar as queries.
 
-Em produção real, bastaria trocar a connection string para PostgreSQL sem alterar queries.
+**Sistema de Fallback**
+Se o modelo ML falhar por qualquer motivo, regras de negócio assumem automaticamente. Isso garante que a API sempre responde, mesmo que com confiança menor.
 
-### Por que Logging Estruturado?
-Logs estruturados permitem:
-- Busca eficiente em ferramentas como ELK Stack
-- Correlação de eventos por transaction_id
-- Alertas automáticos baseados em padrões
+## Possíveis Melhorias
 
-## Perguntas Frequentes para Entrevistas
+Algumas ideias que pensei mas não implementei ainda:
 
-### Como você lidaria com concept drift no modelo?
-Implementaria um pipeline de retreinamento agendado que:
-1. Coleta transações recentes do banco
-2. Re-extrai features e treina novo modelo
-3. Compara performance com modelo atual em holdout set
-4. Se métricas melhorarem, substitui modelo automaticamente via versioning
+**Retreinamento Automático**
+Criar um pipeline que periodicamente pega novas transações do banco, treina um novo modelo e compara a performance antes de substituir o modelo atual.
 
-### E se a API receber 10.000 requisições por segundo?
-Escalaria horizontalmente com:
-1. Message broker como RabbitMQ para fila de análises
-2. Múltiplos workers processando em paralelo
-3. Cache Redis para históricos de usuários frequentes
-4. Sharding do banco por user_id hash
-5. Load balancer na camada de API
+**Escalabilidade**
+Para tráfego muito alto, seria interessante adicionar um message broker tipo RabbitMQ para processar análises de forma assíncrona, e usar Redis para cachear estatísticas de usuários frequentes.
 
-### Como garantir que o modelo não discrimina grupos?
-1. Auditoria regular usando fairness metrics do AI Fairness 360
-2. Análise de disparate impact por grupos demográficos
-3. Documentação detalhada de todas as features utilizadas
-4. Remoção de features sensíveis como localização quando possível
-5. A/B testing de decisões em grupos de controle
+**Fairness**
+Implementar métricas de fairness para garantir que o modelo não discrimina grupos específicos de usuários inadvertidamente.
 
-### Explique o trade-off entre falsos positivos e negativos
-Em fraude, falsos negativos custam dinheiro **diretamente**, então prefiro um threshold conservador que gera alguns falsos positivos. Estes podem ser resolvidos com:
-- Verificação secundária por SMS/Email
-- Step-up authentication
-- Análise manual para valores muito altos
-
-O custo de bloquear temporariamente um usuário legítimo é **menor** que deixar uma fraude passar.
-
-### Como você debugaria uma queda na acurácia?
-1. Verifico logs de fallback - modelo está falhando?
-2. Analiso distribuição de features em transações recentes vs training data
-3. Comparo fraud_rate diária - mudança real ou data drift?
-4. Reviso feature importance - alguma feature degradou?
-5. Testo modelo em diferentes cohorts de usuários
-
-### O que faria diferente em produção real?
-1. PostgreSQL com read replicas para queries analíticas
-2. Redis para cache de user statistics
-3. Kafka para stream processing assíncrono
-4. Prometheus + Grafana para métricas de negócio
-5. CI/CD com testes de regressão de modelo
-6. Feature flags para rollout gradual de novos modelos
-
-## Próximos Passos - Roadmap
-
-- [ ] Implementar análise em batch para retreinamento
-- [ ] Adicionar A/B testing framework para modelos
-- [ ] Criar testes unitários com coverage >80%
-- [ ] Implementar circuit breaker pattern
-- [ ] Adicionar rate limiting por usuário
-- [ ] Integração com Prometheus para métricas
-- [ ] Deploy em Kubernetes com auto-scaling
+**Threshold Dinâmico**
+Ao invés de usar threshold fixo, ajustar baseado no custo de falsos positivos vs falsos negativos para cada categoria de merchant.
 
 ## Deploy com Docker
 
@@ -360,27 +244,6 @@ docker build -t fraud-shield .
 docker run -p 5000:5000 fraud-shield
 ```
 
-## Métricas de Performance
-
-Em testes locais:
-- Latência média: **45ms** por análise
-- Throughput: **~2000 req/seg** em MacBook Pro M1
-- Acurácia no test set: **94.2%**
-- Precision para fraudes: **89.7%**
-- Recall para fraudes: **91.3%**
-
 ## Licença
 
-MIT License - Projeto de portfolio para fins educacionais e demonstração de expertise técnica.
-
-## Autor
-
-Desenvolvido como projeto de portfólio demonstrando domínio em:
-- Machine Learning Engineering
-- Arquitetura de Software
-- APIs de Alta Performance
-- Pensamento orientado a produção
-
----
-
-**Este projeto não é apenas código que funciona. É código pronto para produção.**
+MIT License
