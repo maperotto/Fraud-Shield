@@ -1,6 +1,9 @@
 from flask import Flask
 from src.entrypoints.config import Config
 from src.entrypoints.routes import analyze_bp
+from src.core.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 def create_app() -> Flask:
@@ -8,6 +11,8 @@ def create_app() -> Flask:
     app.config.from_object(Config)
     
     app.register_blueprint(analyze_bp)
+    
+    logger.info("Fraud Shield API initialized")
     
     @app.route('/health', methods=['GET'])
     def health_check():

@@ -7,9 +7,13 @@ from src.core.fraud_detector import FraudDetector
 from src.core.feature_engineering import FeatureExtractor
 from src.core.repository import InMemoryTransactionRepository
 from src.core.dashboard import DashboardGenerator
+from src.core.logger import setup_logger
+from src.core.exceptions import ModelNotTrainedException, InvalidTransactionException
 import os
 
 analyze_bp = Blueprint('analyze', __name__)
+
+logger = setup_logger(__name__)
 
 detector = FraudDetector()
 extractor = FeatureExtractor()
@@ -19,12 +23,16 @@ dashboard_gen = DashboardGenerator()
 model_path = os.getenv('MODEL_PATH', 'models/fraud_detector.pkl')
 if os.path.exists(model_path):
     detector.load_model(model_path)
+    logger.info(f"Model loaded successfully from {model_path}")
+else:
+    logger.warning(f"Model not found at {model_path}")
 
 
 @analyze_bp.route('/v1/analyze', methods=['POST'])
 def analyze_transaction():
     try:
         data = request.get_json()
+        logger.info(f"Received analysis request for transaction: {data.get('transaction_id', 'unknown')}")
         
         transaction_req = TransactionRequest(**data)
         
@@ -38,11 +46,18 @@ def analyze_transaction():
         )
         
         history = repository.get_user_history(transaction.user_id, limit=100)
+        logger.debug(f"Retrieved {len(history)} historical transactions for user {transaction.user_id}")
         
         features = extractor.extract_features(transaction, history)
         
         prediction = detector.predict(features)
         prediction.transaction_id = transaction.transaction_id
+        
+        logger.info(
+            f"Analysis complete: {transaction.transaction_id} - "
+            f"Fraud={prediction.is_fraud}, Score={prediction.confidence_score:.4f}, "
+            f"Risk={prediction.risk_level}"
+        )
         
         repository.save_transaction(transaction)
         
@@ -57,20 +72,33 @@ def analyze_transaction():
         return jsonify(response.model_dump()), 200
         
     except ValidationError as e:
+        logger.warning(f"Validation error: {e.errors()}")
         return jsonify({
             'error': 'Validation failed',
             'details': e.errors()
         }), 400
+    
+    except ValueError as e:
+        logger.info("Generating fraud analysis dashboard")
+        chart_path = dashboard_gen.generate_fraud_analysis_chart()
+        logger.info(f"Dashboard generated successfully: {chart_path}")
+        
+        return send_file(
+            chart_path,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name='fraud_analysis_dashboard.png'
+        )
+        
+    except FileNotFoundError as e:
+        logger.error(f"Data file not found: {str(e)}")
+        return jsonify({
+            'error': 'Data not found',
+            'message': str(e)
+        }), 404
         
     except Exception as e:
-        return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
-        }), 500
-
-
-@analyze_bp.route('/v1/dashboard', methods=['GET'])
-def get_dashboard():
+        logger.error(f"Dashboard generation failed: {str(e)}", exc_info=True)
     try:
         chart_path = dashboard_gen.generate_fraud_analysis_chart()
         
