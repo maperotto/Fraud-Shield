@@ -1,10 +1,13 @@
 from flask import Flask
 from src.entrypoints.config import Config
+from src.entrypoints.routes import analyze_bp
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    app.register_blueprint(analyze_bp)
     
     @app.route('/health', methods=['GET'])
     def health_check():
