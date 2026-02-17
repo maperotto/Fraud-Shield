@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from datetime import datetime
 from pydantic import ValidationError
 from src.entrypoints.schemas import TransactionRequest, FraudAnalysisResponse
@@ -6,6 +6,7 @@ from src.domain.entities import Transaction
 from src.core.fraud_detector import FraudDetector
 from src.core.feature_engineering import FeatureExtractor
 from src.core.repository import InMemoryTransactionRepository
+from src.core.dashboard import DashboardGenerator
 import os
 
 analyze_bp = Blueprint('analyze', __name__)
@@ -13,6 +14,7 @@ analyze_bp = Blueprint('analyze', __name__)
 detector = FraudDetector()
 extractor = FeatureExtractor()
 repository = InMemoryTransactionRepository()
+dashboard_gen = DashboardGenerator()
 
 model_path = os.getenv('MODEL_PATH', 'models/fraud_detector.pkl')
 if os.path.exists(model_path):
@@ -63,5 +65,30 @@ def analyze_transaction():
     except Exception as e:
         return jsonify({
             'error': 'Internal server error',
+            'message': str(e)
+        }), 500
+
+
+@analyze_bp.route('/v1/dashboard', methods=['GET'])
+def get_dashboard():
+    try:
+        chart_path = dashboard_gen.generate_fraud_analysis_chart()
+        
+        return send_file(
+            chart_path,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name='fraud_analysis_dashboard.png'
+        )
+        
+    except FileNotFoundError as e:
+        return jsonify({
+            'error': 'Data not found',
+            'message': str(e)
+        }), 404
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to generate dashboard',
             'message': str(e)
         }), 500
