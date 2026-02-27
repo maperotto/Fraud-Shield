@@ -78,7 +78,20 @@ class FraudDatabase:
             CREATE INDEX IF NOT EXISTS idx_is_fraud ON fraud_analysis(is_fraud)
         ''')
         
-        cursor.execute('''
+        conn.commit()
+        conn.close()
+    
+    def _optimize_database(self) -> None:
+        """Optimize database for better performance"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute('PRAGMA optimize')
+        conn.commit()
+        conn.close()
+    
+    def save_analysis(self, analysis_data: Dict) -> bool:
+        """Save fraud analysis results to database"""
+        try:
             if analysis_data['amount'] < 0:
                 raise ValueError("Amount cannot be negative")
             
@@ -121,23 +134,7 @@ class FraudDatabase:
             return True
             
         except ValueError as e:
-            raise e    analysis_data['confidence_score'],
-                analysis_data['risk_level'],
-                analysis_data['analysis_timestamp'],
-                str(analysis_data.get('features', {}))
-            ))
-            
-            self._update_user_statistics(
-                cursor,
-                analysis_data['user_id'],
-                analysis_data['amount'],
-                analysis_data['is_fraud']
-            )
-            
-            conn.commit()
-            conn.close()
-            return True
-            
+            raise e
         except Exception as e:
             print(f"Database error: {e}")
             return False
@@ -232,3 +229,38 @@ class FraudDatabase:
         row = cursor.fetchone()
         conn.close()
         return dict(row) if row else {}
+    
+    def get_stats_by_timeframe(self, start_time: str, end_time: str) -> Dict:
+        """Get statistics for a specific timeframe"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_analyzed,
+                SUM(CASE WHEN is_fraud = 1 THEN 1 ELSE 0 END) as total_fraud,
+                AVG(confidence_score) as avg_confidence
+            FROM fraud_analysis
+            WHERE timestamp BETWEEN ? AND ?
+        ''', (start_time, end_time))
+        
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else {'total_analyzed': 0, 'total_fraud': 0, 'avg_confidence': 0}
+    
+    def get_risk_distribution(self) -> Dict:
+        """Get distribution of transactions by risk level"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT 
+                risk_level,
+                COUNT(*) as count
+            FROM fraud_analysis
+            GROUP BY risk_level
+        ''')
+        
+        results = {row['risk_level']: row['count'] for row in cursor.fetchall()}
+        conn.close()
+        return results

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Shield - Engine de Detecção de Fraude</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="18" stroke="#00D9FF" stroke-width="2"/>
+                        <path d="M20 10 L20 20 L26 26" stroke="#00D9FF" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>Fraud Shield</h1>
+                    <p>Engine de Detecção de Fraude</p>
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="status-item active">
+                    <span class="status-dot"></span>
+                    <span>Sistema Ativo</span>
+                </div>
+                <div class="status-item monitoring">
+                    <span class="status-dot"></span>
+                    <span>Monitorando</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Metrics Cards -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon pulse">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-label">Transações Hoje</div>
+                    <div class="metric-value" id="transactionsToday">0</div>
+                    <div class="metric-change positive" id="transactionsChange">+0%</div>
+                </div>
+            </div>
+
+            <div class="metric-card alert">
+                <div class="metric-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-label">Fraudes Detectadas</div>
+                    <div class="metric-value" id="fraudsDetected">0</div>
+                    <div class="metric-change negative" id="fraudsChange">+0%</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-label">Taxa de Precisão</div>
+                    <div class="metric-value" id="precisionRate">0%</div>
+                    <div class="metric-change positive" id="precisionChange">+0%</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-label">Tempo de Resposta</div>
+                    <div class="metric-value" id="responseTime">0ms</div>
+                    <div class="metric-change positive" id="responseChange">-0ms</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-card large">
+                <div class="chart-header">
+                    <h3>Fluxo de Transações</h3>
+                    <p>Monitoramento em tempo real — últimas 24h</p>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot transactions"></span>
+                        <span>Transações</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot frauds"></span>
+                        <span>Fraudes</span>
+                    </div>
+                </div>
+                <canvas id="transactionFlowChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Distribuição de Risco</h3>
+                    <p>Classificação das transações hoje</p>
+                </div>
+                <canvas id="riskDistributionChart"></canvas>
+                <div class="risk-stats" id="riskStats">
+                    <div class="risk-stat">
+                        <span class="risk-dot approved"></span>
+                        <span class="risk-label">Aprovadas</span>
+                        <span class="risk-value">0%</span>
+                    </div>
+                    <div class="risk-stat">
+                        <span class="risk-dot analyzing"></span>
+                        <span class="risk-label">Em análise</span>
+                        <span class="risk-value">0%</span>
+                    </div>
+                    <div class="risk-stat">
+                        <span class="risk-dot blocked"></span>
+                        <span class="risk-label">Bloqueadas</span>
+                        <span class="risk-value">0%</span>
+                    </div>
+                    <div class="risk-stat">
+                        <span class="risk-dot review"></span>
+                        <span class="risk-label">Revisão manual</span>
+                        <span class="risk-value">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts and Analysis Section -->
+        <div class="bottom-grid">
+            <div class="alerts-card">
+                <div class="card-header">
+                    <h3>Alertas Recentes</h3>
+                    <p>Atividades suspeitas detectadas pelo sistema</p>
+                </div>
+                <div class="alerts-list" id="alertsList">
+                    <!-- Alerts will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h3>Análise Comportamental</h3>
+                    <p>Perfil agregado de risco — última hora</p>
+                </div>
+                <div class="behavior-metrics" id="behaviorMetrics">
+                    <!-- Behavior metrics will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

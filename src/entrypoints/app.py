@@ -10,7 +10,13 @@ logger = setup_logger(__name__)
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    # Configure Flask with correct template and static folders
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    
+    app = Flask(__name__,
+                template_folder=template_dir,
+                static_folder=static_dir)
     app.config.from_object(Config)
     
     CORS(app, resources={
