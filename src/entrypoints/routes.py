@@ -236,12 +236,12 @@ def get_dashboard_metrics():
             today_start.isoformat()
         )
         
-        transactions_today = today_stats.get('total_analyzed', 0)
-        transactions_yesterday = yesterday_stats.get('total_analyzed', 1)
+        transactions_today = today_stats.get('total_analyzed') or 0
+        transactions_yesterday = yesterday_stats.get('total_analyzed') or 1
         transactions_change = ((transactions_today - transactions_yesterday) / transactions_yesterday * 100) if transactions_yesterday > 0 else 0
         
-        frauds_today = today_stats.get('total_fraud', 0)
-        frauds_yesterday = yesterday_stats.get('total_fraud', 1)
+        frauds_today = today_stats.get('total_fraud') or 0
+        frauds_yesterday = yesterday_stats.get('total_fraud') or 1
         frauds_change = ((frauds_today - frauds_yesterday) / frauds_yesterday * 100) if frauds_yesterday > 0 else 0
         
         # Calculate precision rate
@@ -264,8 +264,8 @@ def get_dashboard_metrics():
                 hour_start.isoformat(),
                 hour_end.isoformat()
             )
-            flow_transactions.append(hour_stats.get('total_analyzed', 0))
-            flow_frauds.append(hour_stats.get('total_fraud', 0))
+            flow_transactions.append(hour_stats.get('total_analyzed') or 0)
+            flow_frauds.append(hour_stats.get('total_fraud') or 0)
         
         # Get risk distribution
         risk_stats = database.get_risk_distribution()
