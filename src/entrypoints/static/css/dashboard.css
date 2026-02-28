@@ -239,6 +239,7 @@ body {
     border-radius: 16px;
     padding: 1.5rem;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .chart-card:hover {
@@ -247,6 +248,12 @@ body {
 
 .chart-card.large {
     min-height: 400px;
+    max-height: 450px;
+}
+
+.chart-card canvas {
+    max-height: 280px !important;
+    width: 100% !important;
 }
 
 .chart-header {

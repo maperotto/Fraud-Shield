@@ -1,15 +1,20 @@
 // Dashboard Configuration
-const UPDATE_INTERVAL = 5000; // 5 seconds
+const UPDATE_INTERVAL = 30000; // 30 seconds (reduced frequency)
 const CHART_HOURS = 24;
 
 // Chart instances
 let transactionFlowChart = null;
 let riskDistributionChart = null;
 
+// Store static mock data to prevent regeneration
+let staticMockData = null;
+
 // Initialize Dashboard
 document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
+    initializeStaticData();
     fetchDashboardData();
+    // Update every 30 seconds only
     setInterval(fetchDashboardData, UPDATE_INTERVAL);
 });
 
@@ -62,7 +67,8 @@ function initializeCharts() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 3,
             interaction: {
                 mode: 'index',
                 intersect: false,
@@ -133,6 +139,7 @@ function initializeCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            aspectRatio: 1.5,
             cutout: '75%',
             plugins: {
                 legend: {
@@ -182,13 +189,13 @@ async function fetchDashboardData() {
 function updateMetrics(metrics) {
     if (!metrics) return;
     
-    // Transactions Today
-    animateValue('transactionsToday', parseInt(document.getElementById('transactionsToday').innerText.replace(/,/g, '')) || 0, metrics.transactions_today, 1000);
+    // Transactions Today - Direct update without animation to prevent accumulation
+    document.getElementById('transactionsToday').innerText = metrics.transactions_today.toLocaleString();
     document.getElementById('transactionsChange').innerText = formatChange(metrics.transactions_change);
     document.getElementById('transactionsChange').className = 'metric-change ' + (metrics.transactions_change >= 0 ? 'positive' : 'negative');
     
-    // Frauds Detected
-    animateValue('fraudsDetected', parseInt(document.getElementById('fraudsDetected').innerText) || 0, metrics.frauds_detected, 1000);
+    // Frauds Detected - Direct update
+    document.getElementById('fraudsDetected').innerText = metrics.frauds_detected.toLocaleString();
     document.getElementById('fraudsChange').innerText = formatChange(metrics.frauds_change);
     document.getElementById('fraudsChange').className = 'metric-change ' + (metrics.frauds_change >= 0 ? 'negative' : 'positive');
     
@@ -294,22 +301,6 @@ function formatChange(value, isPercentage = true, suffix = '%') {
     return sign + value + suffix;
 }
 
-function animateValue(elementId, start, end, duration) {
-    const element = document.getElementById(elementId);
-    const range = end - start;
-    const increment = range / (duration / 16);
-    let current = start;
-    
-    const timer = setInterval(() => {
-        current += increment;
-        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-            current = end;
-            clearInterval(timer);
-        }
-        element.innerText = Math.floor(current).toLocaleString();
-    }, 16);
-}
-
 function getColorForMetric(value) {
     if (value >= 70) return '#ef4444'; // Red for high risk
     if (value >= 40) return '#f59e0b'; // Orange for medium risk
@@ -326,72 +317,83 @@ function getTimeAgo(minutes) {
     return hours + ' horas atrás';
 }
 
+// Initialize static data once
+function initializeStaticData() {
+    staticMockData = {
+        metrics: {
+            transactions_today: 32847,
+            transactions_change: 12.5,
+            frauds_detected: 72,
+            frauds_change: 3.2,
+            precision_rate: 99.78,
+            precision_change: 0.12,
+            response_time: 23,
+            response_time_change: -8
+        },
+        transactionFlow: {
+            transactions: [1200, 890, 650, 480, 720, 950, 1480, 2050, 3150, 3750, 4180, 4520, 4280, 4590, 5180, 4780, 3850, 3380, 2790, 2380, 2080, 1750, 1480, 1280],
+            frauds: [6, 4, 3, 2, 4, 5, 9, 13, 19, 23, 26, 29, 27, 30, 33, 31, 25, 22, 18, 15, 13, 11, 9, 8]
+        },
+        riskDistribution: {
+            approved: 30954,
+            analyzing: 1018,
+            blocked: 591,
+            review: 284
+        },
+        alerts: [
+            {
+                title: 'Transação incomum detectada — desvio de 340% do padrão',
+                details: 'usr_8x92k    R$ 12.450,00',
+                time: '2 min atrás',
+                severity: 'HIGH'
+            },
+            {
+                title: 'Login de nova localização geográfica',
+                details: 'usr_3m71q    R$ 890,00',
+                time: '8 min atrás',
+                severity: 'MEDIUM'
+            },
+            {
+                title: 'Transação verificada após autenticação adicional',
+                details: 'usr_5p44w    R$ 3.200,00',
+                time: '15 min atrás',
+                severity: 'OK'
+            },
+            {
+                title: 'Múltiplas transações rápidas — possível bot',
+                details: 'usr_1a09z    R$ 28.900,00',
+                time: '22 min atrás',
+                severity: 'HIGH'
+            },
+            {
+                title: 'Horário fora do padrão habitual do usuário',
+                details: 'usr_7k33e    R$ 450,00',
+                time: '31 min atrás',
+                severity: 'LOW'
+            }
+        ],
+        behavior: [
+            { label: 'Desvio de Valor Médio', value: 72 },
+            { label: 'Frequência Anômala', value: 45 },
+            { label: 'Risco Geográfico', value: 88 },
+            { label: 'Consistência Temporal', value: 23 },
+            { label: 'Score de Confiança', value: 61 }
+        ]
+    };
+}
+
 // Mock Data for demonstration when API is not available
 function useMockData() {
-    // Generate realistic mock data
-    const metrics = {
-        transactions_today: 32847,
-        transactions_change: 12.5,
-        frauds_detected: 72,
-        frauds_change: 3.2,
-        precision_rate: 99.78,
-        precision_change: 0.12,
-        response_time: 23,
-        response_time_change: -8
-    };
+    if (!staticMockData) {
+        initializeStaticData();
+    }
     
-    const transactionFlow = {
-        transactions: generateFlowData(1500, 5000),
-        frauds: generateFlowData(0, 50)
-    };
+    const metrics = staticMockData.metrics;
+    const transactionFlow = staticMockData.transactionFlow;
+    const riskDistribution = staticMockData.riskDistribution;
     
-    const riskDistribution = {
-        approved: 30954,
-        analyzing: 1018,
-        blocked: 591,
-        review: 284
-    };
-    
-    const alerts = [
-        {
-            title: 'Transação incomum detectada — desvio de 340% do padrão',
-            details: 'usr_8x92k    R$ 12.450,00',
-            time: '2 min atrás',
-            severity: 'HIGH'
-        },
-        {
-            title: 'Login de nova localização geográfica',
-            details: 'usr_3m71q    R$ 890,00',
-            time: '8 min atrás',
-            severity: 'MEDIUM'
-        },
-        {
-            title: 'Transação verificada após autenticação adicional',
-            details: 'usr_5p44w    R$ 3.200,00',
-            time: '15 min atrás',
-            severity: 'OK'
-        },
-        {
-            title: 'Múltiplas transações rápidas — possível bot',
-            details: 'usr_1a09z    R$ 28.900,00',
-            time: '22 min atrás',
-            severity: 'HIGH'
-        },
-        {
-            title: 'Horário fora do padrão habitual do usuário',
-            details: 'usr_7k33e    R$ 450,00',
-            time: '31 min atrás',
-            severity: 'LOW'
-        }
-    ];
-    
-    const behavior = [
-        { label: 'Desvio de Valor Médio', value: 72 },
-        { label: 'Frequência Anômala', value: 45 },
-        { label: 'Risco Geográfico', value: 88 },
-        { label: 'Consistência Temporal', value: 23 },
-        { label: 'Score de Confiança', value: 61 }
-    ];
+    const alerts = staticMockData.alerts;
+    const behavior = staticMockData.behavior;
     
     updateMetrics(metrics);
     updateCharts({
@@ -401,19 +403,3 @@ function useMockData() {
     updateAlerts(alerts);
     updateBehaviorMetrics(behavior);
 }
-
-function generateFlowData(min, max) {
-    const data = [];
-    let lastValue = Math.floor(Math.random() * (max - min) + min);
-    
-    for (let i = 0; i < CHART_HOURS; i++) {
-        const change = (Math.random() - 0.5) * (max * 0.3);
-        lastValue = Math.max(min, Math.min(max, lastValue + change));
-        data.push(Math.floor(lastValue));
-    }
-    
-    return data;
-}
-
-// Initialize with mock data on first load
-useMockData();
